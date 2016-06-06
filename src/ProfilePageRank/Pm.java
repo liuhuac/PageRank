@@ -19,6 +19,86 @@ public class Pm {
 	double minMem = 3.75; // depends on minimum memory request from VM instances
 	int minDisk = 4;
 	
+	public int getvCPUs() {
+		return vCPUs;
+	}
+
+	public void setvCPUs(int vCPUs) {
+		this.vCPUs = vCPUs;
+	}
+
+	public double getMemory() {
+		return memory;
+	}
+
+	public void setMemory(double memory) {
+		this.memory = memory;
+	}
+
+	public int getdCap() {
+		return dCap;
+	}
+
+	public void setdCap(int dCap) {
+		this.dCap = dCap;
+	}
+
+	public double getUsedMem() {
+		return usedMem;
+	}
+
+	public void setUsedMem(double usedMem) {
+		this.usedMem = usedMem;
+	}
+
+	public double getMinMem() {
+		return minMem;
+	}
+
+	public void setMinMem(double minMem) {
+		this.minMem = minMem;
+	}
+
+	public int getMinDisk() {
+		return minDisk;
+	}
+
+	public void setMinDisk(int minDisk) {
+		this.minDisk = minDisk;
+	}
+
+	public int getnCores() {
+		return nCores;
+	}
+
+	public void setnCores(int nCores) {
+		this.nCores = nCores;
+	}
+
+	public int getnDisks() {
+		return nDisks;
+	}
+
+	public void setnDisks(int nDisks) {
+		this.nDisks = nDisks;
+	}
+
+	public int[] getUsedCPU() {
+		return usedCPU;
+	}
+
+	public void setUsedCPU(int[] usedCPU) {
+		this.usedCPU = usedCPU;
+	}
+
+	public int[] getUsedDisk() {
+		return usedDisk;
+	}
+
+	public void setUsedDisk(int[] usedDisk) {
+		this.usedDisk = usedDisk;
+	}
+
 	public Pm(int nCores, int vCPUs, double memory, int nDisks, int dCap) {
 		super();
 		this.nCores = nCores;
@@ -72,9 +152,41 @@ public class Pm {
 		dCap = Integer.valueOf(diskCap[0]);
 	}
 	
-	public List<Pm> addVm(String p){
+	public List<Pm> addVm(String vmProfileStr){
 		List<Pm> pmList = new ArrayList<>();
-		Vm vm = new Vm(p);
+		Vm vm = new Vm(vmProfileStr);
+		List<List<Integer>> posCPU = helper(vm.getnCores(), this.getnCores());
+		List<List<Integer>> posDisk = helper(vm.getnDisks(), this.getnDisks());
+		
+		// check memory
+		if(this.getUsedMem()+vm.getMemory()>this.getMemory()) return pmList;
+		
+		for(List<Integer> pC : posCPU){
+			// check cpu validation
+			boolean cpuValid = true;
+			for(int i=0; i<this.getnCores(); i++){ // for every PM core
+				if(this.usedCPU[i]+vm.getvCPUs() > this.vCPUs) {
+					cpuValid = false;
+					break;
+				}
+			}
+			if(!cpuValid) continue;
+			
+			for(List<Integer> pD : posDisk){
+				// check disk validation
+				boolean diskValid = true;
+				for(int i=0; i<this.getnDisks(); i++){ // for every PM disk
+					if(this.usedDisk[i]+vm.getnDisks() > this.nDisks) {
+						diskValid = false;
+						break;
+					}
+				}
+				if(!diskValid) continue;
+				
+				// if code arrives here, pm is feasible to hold this vm
+				Pm newPm = new Pm()
+			}
+		}
 		return null;
 	}
 
@@ -105,5 +217,23 @@ public class Pm {
 		}
 		sb.deleteCharAt(sb.length()-1);
 		return sb.toString();
+	}
+	
+	public List<List<Integer>> helper(int k, int n){
+		List<List<Integer>> result = new ArrayList<>();
+		if(k==0){
+			result.add(new ArrayList<Integer>());
+			return result;
+		}
+		if(k>n) return result;
+		
+		List<List<Integer>> part1 = helper(k-1, n-1);
+		List<List<Integer>> part2 = helper(k, n-1);
+		result.addAll(part2);
+		for(List<Integer> list : part1){
+			list.add(n-1);
+		}
+		result.addAll(part2);
+		return result;
 	}
 }
