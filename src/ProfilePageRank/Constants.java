@@ -10,4 +10,5 @@ public class Constants {
 	static String PM = "4,4,4,4,4,4,4,4:60:512,512,512,512";
 	static double minMem = 3.75;
 	static int minDisk = 4;
+	public static int debugLevel = 1;
 }

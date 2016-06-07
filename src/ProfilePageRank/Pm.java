@@ -1,9 +1,11 @@
 package ProfilePageRank;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 
 public class Pm {
 	int nCores;
@@ -152,20 +154,43 @@ public class Pm {
 		dCap = Integer.valueOf(diskCap[0]);
 	}
 	
+	public Pm(int[] newUsedCPU, double newUsedMem, int[] newUsedDisk,
+			int getnCores, int getvCPUs, double memory2, int getnDisks,
+			int getdCap) {
+		// TODO Auto-generated constructor stub
+		this.usedCPU = new int[newUsedCPU.length];
+		for(int i=0; i<newUsedCPU.length; i++) this.usedCPU[i] = newUsedCPU[i];
+		this.usedMem = newUsedMem;
+		this.usedDisk = new int[newUsedDisk.length];
+		for(int i=0; i<newUsedDisk.length; i++) this.usedDisk[i] = newUsedDisk[i];
+		
+		this.nCores = getnCores;
+		this.vCPUs = getvCPUs;
+		this.memory = memory2;
+		this.nDisks = getnDisks;
+		this.dCap = getdCap;
+	}
+
 	public List<Pm> addVm(String vmProfileStr){
 		List<Pm> pmList = new ArrayList<>();
 		Vm vm = new Vm(vmProfileStr);
 		List<List<Integer>> posCPU = helper(vm.getnCores(), this.getnCores());
 		List<List<Integer>> posDisk = helper(vm.getnDisks(), this.getnDisks());
+			
+		double newUsedMem;
 		
 		// check memory
-		if(this.getUsedMem()+vm.getMemory()>this.getMemory()) return pmList;
+		newUsedMem = this.getUsedMem()+vm.getMemory();
+		if(newUsedMem>this.getMemory()) return pmList;
 		
 		for(List<Integer> pC : posCPU){
+			int[] newUsedCPU = new int[this.getnCores()];
 			// check cpu validation
 			boolean cpuValid = true;
 			for(int i=0; i<this.getnCores(); i++){ // for every PM core
-				if(this.usedCPU[i]+vm.getvCPUs() > this.vCPUs) {
+				if(i!=pC.get(0) && i!=pC.get(1)) continue; // if PM core is not selected
+				newUsedCPU[i] = this.usedCPU[i]+vm.getvCPUs();
+				if(newUsedCPU[i] > this.vCPUs) {
 					cpuValid = false;
 					break;
 				}
@@ -173,10 +198,13 @@ public class Pm {
 			if(!cpuValid) continue;
 			
 			for(List<Integer> pD : posDisk){
+				int[] newUsedDisk = new int[this.getnDisks()];
 				// check disk validation
 				boolean diskValid = true;
 				for(int i=0; i<this.getnDisks(); i++){ // for every PM disk
-					if(this.usedDisk[i]+vm.getnDisks() > this.nDisks) {
+					if(i!=pD.get(0) && i!=pD.get(1)) continue; // if PM disk is not selected
+					newUsedDisk[i] = this.usedDisk[i]+vm.getdCap();
+					if(newUsedDisk[i] > this.dCap) {
 						diskValid = false;
 						break;
 					}
@@ -184,22 +212,55 @@ public class Pm {
 				if(!diskValid) continue;
 				
 				// if code arrives here, pm is feasible to hold this vm
-				Pm newPm = new Pm()
-			}
+				Pm newPm = new Pm(newUsedCPU, 
+						newUsedMem, 
+						newUsedDisk, 
+						this.getnCores(), 
+						this.getvCPUs(), 
+						this.getMemory(), 
+						this.getnDisks(), 
+						this.getdCap());
+				pmList.add(newPm);
+			}	
 		}
-		return null;
+		return pmList;
 	}
 
-	public Queue<String> getNewProfiles() {
+	public Set<String> getNewProfiles() {
 		// TODO Auto-generated method stub
-		Queue<String> newProfiles = new LinkedList<>();
-		for(String vm : Constants.VMs){
-			
+		Set<String> newProfiles = new HashSet<>();
+		for(String vm : Constants.VMs){ // add every VM type
+			for(Pm pm : this.addVm(vm)){ // for each VM type, iterate all possible addition (i.e, which core holds vCPU, which disk holds vDisk)
+				newProfiles.add(pm.getUsedProfile());
+			}
 		}
-		return null;
+		return newProfiles;
 	}
 
 	public String getUsedProfile() {
+		// TODO Auto-generated method stub
+		String sb = "";
+		String mark = "";
+		for(int u : this.usedCPU){
+			sb += mark;
+			mark = ",";
+			sb += u;			
+		}
+		
+		sb += ':';
+		sb += this.usedMem;
+		sb += ':';
+		
+		mark = "";
+		for(int u : this.usedDisk){
+			sb += mark;
+			mark = ",";
+			sb += u;
+		}
+		return sb;
+	}
+	
+	/*public String getUsedProfile() {
 		// TODO Auto-generated method stub
 		StringBuilder sb = new StringBuilder();
 		for(int u : this.usedCPU){
@@ -213,6 +274,26 @@ public class Pm {
 		
 		for(int u : this.usedDisk){
 			sb.append(u);
+			sb.append(",");
+		}
+		sb.deleteCharAt(sb.length()-1);
+		return sb.toString();
+	}*/
+	
+	public String getCapString() {
+		// TODO Auto-generated method stub
+		StringBuilder sb = new StringBuilder();
+		for(int i=0; i<this.nCores; i++){
+			sb.append(this.vCPUs);
+			sb.append(",");
+		}
+		
+		sb.setCharAt(sb.length()-1, ':');
+		sb.append(this.memory);
+		sb.append(":");
+		
+		for(int i=0; i<this.nDisks; i++){
+			sb.append(this.dCap);
 			sb.append(",");
 		}
 		sb.deleteCharAt(sb.length()-1);
@@ -233,7 +314,7 @@ public class Pm {
 		for(List<Integer> list : part1){
 			list.add(n-1);
 		}
-		result.addAll(part2);
+		result.addAll(part1);
 		return result;
 	}
 }
