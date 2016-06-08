@@ -2,10 +2,12 @@ package ProfilePageRank;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 
 public class PageRank {
 
@@ -18,11 +20,11 @@ public class PageRank {
 	Map<String,List<String>> profileGraph = new HashMap<>();
 	
 	public void buildGraph(){
-		Queue<String> oldProfiles = new LinkedList<>();
+		Set<String> oldProfiles = new HashSet<>();
 		oldProfiles.add((new Pm(Constants.PM).getUsedProfile()));
 		while(oldProfiles.size()!=0){
 			printInfo(true, "Debug: oldProfiles.size()="+oldProfiles.size(), Constants.debugLevel);
-			Queue<String> newProfiles = new LinkedList<>();
+			Set<String> newProfiles = new HashSet<>();
 			for(String profile : oldProfiles){
 				
 				if(profileGraph.containsKey(profile)) {
@@ -36,6 +38,7 @@ public class PageRank {
 				list.addAll(pm.getNewProfiles());
 				listForGraph.addAll(list);
 				profileGraph.put(profile, listForGraph);
+				//System.out.println(profile);
 			
 				newProfiles.addAll(list);
 			}

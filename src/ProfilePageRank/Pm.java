@@ -171,8 +171,8 @@ public class Pm {
 		this.dCap = getdCap;
 	}
 
-	public List<Pm> addVm(String vmProfileStr){
-		List<Pm> pmList = new ArrayList<>();
+	public Set<String> addVm(String vmProfileStr){
+		Set<String> pmList = new HashSet<>();
 		Vm vm = new Vm(vmProfileStr);
 		List<List<Integer>> posCPU = helper(vm.getnCores(), this.getnCores());
 		List<List<Integer>> posDisk = helper(vm.getnDisks(), this.getnDisks());
@@ -188,8 +188,8 @@ public class Pm {
 			// check cpu validation
 			boolean cpuValid = true;
 			for(int i=0; i<this.getnCores(); i++){ // for every PM core
-				if(i!=pC.get(0) && i!=pC.get(1)) continue; // if PM core is not selected
-				newUsedCPU[i] = this.usedCPU[i]+vm.getvCPUs();
+				int increase = (i==pC.get(0) || i==pC.get(1)) ? vm.getvCPUs() : 0; // increase=vm.getvCPUs() if PM core is selected
+				newUsedCPU[i] = this.usedCPU[i]+increase;
 				if(newUsedCPU[i] > this.vCPUs) {
 					cpuValid = false;
 					break;
@@ -202,8 +202,8 @@ public class Pm {
 				// check disk validation
 				boolean diskValid = true;
 				for(int i=0; i<this.getnDisks(); i++){ // for every PM disk
-					if(i!=pD.get(0) && i!=pD.get(1)) continue; // if PM disk is not selected
-					newUsedDisk[i] = this.usedDisk[i]+vm.getdCap();
+					int increase = (i==pC.get(0) || i==pC.get(1)) ? vm.getdCap() : 0; // increase=vm.getdCap() if PM disk is selected
+					newUsedDisk[i] = this.usedDisk[i]+increase;
 					if(newUsedDisk[i] > this.dCap) {
 						diskValid = false;
 						break;
@@ -212,26 +212,55 @@ public class Pm {
 				if(!diskValid) continue;
 				
 				// if code arrives here, pm is feasible to hold this vm
-				Pm newPm = new Pm(newUsedCPU, 
+				/*Pm newPm = new Pm(newUsedCPU, 
 						newUsedMem, 
 						newUsedDisk, 
 						this.getnCores(), 
 						this.getvCPUs(), 
 						this.getMemory(), 
 						this.getnDisks(), 
-						this.getdCap());
-				pmList.add(newPm);
+						this.getdCap());*/
+				pmList.add(getProfileString(newUsedCPU, 
+						newUsedMem, 
+						newUsedDisk));
 			}	
 		}
 		return pmList;
+	}
+
+	private String getProfileString(int[] newUsedCPU, double newUsedMem, int[] newUsedDisk) {
+		// TODO Auto-generated method stub
+		String sb = "";
+		String mark = "";
+		for(int u : newUsedCPU){
+			sb += mark;
+			mark = ",";
+			sb += u;			
+		}
+		
+		sb += ':';
+		sb += newUsedMem;
+		sb += ':';
+		
+		mark = "";
+		for(int u : newUsedDisk){
+			sb += mark;
+			mark = ",";
+			sb += u;
+		}
+		if(sb.equals("2,1,0,0,0,0,0,0:11.25:0,16,0,56")){
+			System.out.println("debug");
+		}
+		return sb;
 	}
 
 	public Set<String> getNewProfiles() {
 		// TODO Auto-generated method stub
 		Set<String> newProfiles = new HashSet<>();
 		for(String vm : Constants.VMs){ // add every VM type
-			for(Pm pm : this.addVm(vm)){ // for each VM type, iterate all possible addition (i.e, which core holds vCPU, which disk holds vDisk)
-				newProfiles.add(pm.getUsedProfile());
+			for(String pm : this.addVm(vm)){ // for each VM type, iterate all possible addition (i.e, which core holds vCPU, which disk holds vDisk)
+				//System.out.println(pm);
+				newProfiles.add(pm);
 			}
 		}
 		return newProfiles;
